@@ -1,0 +1,16 @@
+.git
+.github
+tests
+*.md
+.gitignore
+.dockerignore
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.ruff_cache
+.venv
+venv
+requirements-dev.txt
+data
+*.db

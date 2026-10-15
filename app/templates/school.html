@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ school.name }} · Copa Escolar de Fulbito{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/">Inicio</a> / <a href="/colegios">Colegios</a> / <span>{{ school.name }}</span></nav>
+<h1>{{ school.name }}</h1>
+{% if school.district %}<p class="meta">Distrito: {{ school.district }}</p>{% endif %}
+
+<h2>Equipos</h2>
+{% if teams %}
+<div class="card-grid">
+  {% for t in teams %}
+  <a class="card" href="/equipo/{{ t.id }}">
+    <h3>{{ t.name }}</h3>
+    <p class="meta"><span class="badge">{{ t.category }}</span> {{ t.tournament_name }}</p>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty">Este colegio aún no tiene equipos.</p>
+{% endif %}
+{% endblock %}

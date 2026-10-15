@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Panel · Administración{% endblock %}
+{% set csrf = request.cookies.get('fulbito_csrf', '') %}
+{% block content %}
+<div class="admin-head">
+  <h1>Panel de administración</h1>
+  <form method="post" action="/admin/logout" class="inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <button type="submit" class="btn ghost">Cerrar sesión</button>
+  </form>
+</div>
+
+<section class="admin-section">
+  <h2>Torneos</h2>
+  <table class="data-table">
+    <thead><tr><th class="ta-left">Nombre</th><th>Categoría</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+      {% for t in tournaments %}
+      <tr>
+        <td class="ta-left"><a href="/admin/torneo/{{ t.id }}">{{ t.name }}</a></td>
+        <td>{{ t.category }} · {{ t.gender }} · {{ t.season }}</td>
+        <td>{{ 'Activo' if t.active else 'Inactivo' }}</td>
+        <td>
+          <form method="post" action="/admin/torneos/{{ t.id }}/toggle" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf }}">
+            <button type="submit" class="btn ghost sm">{{ 'Desactivar' if t.active else 'Activar' }}</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <details class="form-details">
+    <summary>Nuevo torneo</summary>
+    <form method="post" action="/admin/torneos" class="form grid2">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Nombre<input name="name" required></label>
+      <label>Categoría
+        <select name="category"><option>Sub-12</option><option selected>Sub-14</option><option>Sub-17</option></select>
+      </label>
+      <label>Género
+        <select name="gender"><option>Masculino</option><option>Femenino</option><option>Mixto</option></select>
+      </label>
+      <label>Temporada<input name="season" value="2026" required></label>
+      <button type="submit" class="btn">Crear torneo</button>
+    </form>
+  </details>
+</section>
+
+<section class="admin-section">
+  <h2>Colegios</h2>
+  <ul class="plain-list">
+    {% for s in schools %}<li>{{ s.name }}{% if s.district %} <span class="muted">({{ s.district }})</span>{% endif %}</li>{% endfor %}
+  </ul>
+  <details class="form-details">
+    <summary>Nuevo colegio</summary>
+    <form method="post" action="/admin/colegios" class="form grid2">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Nombre<input name="name" required></label>
+      <label>Distrito<input name="district"></label>
+      <button type="submit" class="btn">Crear colegio</button>
+    </form>
+  </details>
+</section>
+{% endblock %}

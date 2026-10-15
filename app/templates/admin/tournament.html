@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ t.name }} · Administración{% endblock %}
+{% set csrf = request.cookies.get('fulbito_csrf', '') %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/admin">Panel</a> / <span>{{ t.name }}</span></nav>
+<h1>{{ t.name }}</h1>
+<p class="meta"><span class="badge">{{ t.category }}</span> <span class="badge">{{ t.gender }}</span> <span class="badge">{{ t.season }}</span>
+  · <a href="/torneo/{{ t.id }}">Ver vista pública →</a></p>
+
+<section class="admin-section">
+  <h2>Grupos</h2>
+  {% for g in groups %}
+  <div class="group-block">
+    <h3>{{ g.name }}</h3>
+    <form method="post" action="/admin/grupo/{{ g.id }}/fixture" class="inline"
+          onsubmit="return confirm('Esto reemplaza el fixture existente del grupo. ¿Continuar?');">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <button type="submit" class="btn ghost sm">Generar fixture (todos contra todos)</button>
+    </form>
+  </div>
+  {% else %}<p class="empty">Sin grupos.</p>{% endfor %}
+  <details class="form-details">
+    <summary>Nuevo grupo</summary>
+    <form method="post" action="/admin/torneo/{{ t.id }}/grupos" class="form">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Nombre<input name="name" placeholder="Grupo A" required></label>
+      <button type="submit" class="btn">Crear grupo</button>
+    </form>
+  </details>
+</section>
+
+<section class="admin-section">
+  <h2>Equipos</h2>
+  <table class="data-table">
+    <thead><tr><th class="ta-left">Equipo</th><th class="ta-left">Colegio</th><th>Grupo</th><th></th></tr></thead>
+    <tbody>
+      {% for e in teams %}
+      <tr>
+        <td class="ta-left">{{ e.name }}</td>
+        <td class="ta-left">{{ e.school_name }}</td>
+        <td>{% for g in groups %}{% if g.id == e.group_id %}{{ g.name }}{% endif %}{% endfor %}</td>
+        <td>
+          <details class="form-details inline-details">
+            <summary class="btn ghost sm">+ Jugador</summary>
+            <form method="post" action="/admin/equipo/{{ e.id }}/jugadores" class="form">
+              <input type="hidden" name="csrf_token" value="{{ csrf }}">
+              <label>Nombre<input name="name" required></label>
+              <label>Dorsal<input name="dorsal" type="number" min="1" max="99"></label>
+              <label>DNI (opcional)<input name="dni"></label>
+              <button type="submit" class="btn sm">Agregar</button>
+            </form>
+          </details>
+        </td>
+      </tr>
+      {% else %}<tr><td colspan="4" class="empty">Sin equipos.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+  <details class="form-details">
+    <summary>Nuevo equipo</summary>
+    <form method="post" action="/admin/torneo/{{ t.id }}/equipos" class="form grid2">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Colegio
+        <select name="school_id" required>{% for s in schools %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}</select>
+      </label>
+      <label>Nombre del equipo<input name="name" required></label>
+      <label>Grupo
+        <select name="group_id"><option value="">(sin grupo)</option>{% for g in groups %}<option value="{{ g.id }}">{{ g.name }}</option>{% endfor %}</select>
+      </label>
+      <button type="submit" class="btn">Crear equipo</button>
+    </form>
+  </details>
+</section>
+
+<section class="admin-section">
+  <h2>Partidos</h2>
+  <table class="data-table">
+    <thead><tr><th>Fecha</th><th class="ta-left">Partido</th><th>Resultado</th><th>Programación</th><th></th></tr></thead>
+    <tbody>
+      {% for m in matches %}
+      <tr>
+        <td>{% if m.jornada %}F{{ m.jornada }}{% else %}{{ m.stage }}{% endif %}</td>
+        <td class="ta-left">{{ m.home_name or '—' }} vs {{ m.away_name or '—' }}</td>
+        <td>{% if m.played %}{{ m.home_goals }}-{{ m.away_goals }}{% else %}—{% endif %}</td>
+        <td class="muted sm">{{ (m.kickoff or '').replace('T',' ') }} {{ m.cancha or '' }}</td>
+        <td><a class="btn ghost sm" href="/admin/partido/{{ m.id }}">Gestionar</a></td>
+      </tr>
+      {% else %}<tr><td colspan="5" class="empty">Sin partidos. Genera un fixture por grupo.</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</section>
+
+<section class="admin-section">
+  <h2>Fase final (llaves)</h2>
+  <details class="form-details">
+    <summary>Crear semifinal / final</summary>
+    <form method="post" action="/admin/torneo/{{ t.id }}/llave" class="form grid2">
+      <input type="hidden" name="csrf_token" value="{{ csrf }}">
+      <label>Etapa
+        <select name="stage"><option value="semifinal">Semifinal</option><option value="final">Final</option></select>
+      </label>
+      <label>Nombre (ref.)<input name="name" value="Semifinal"></label>
+      <label>Local
+        <select name="home_team_id" required>{% for e in teams %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>
+      </label>
+      <label>Visita
+        <select name="away_team_id" required>{% for e in teams %}<option value="{{ e.id }}">{{ e.name }}</option>{% endfor %}</select>
+      </label>
+      <button type="submit" class="btn">Crear partido de llave</button>
+    </form>
+  </details>
+</section>
+{% endblock %}

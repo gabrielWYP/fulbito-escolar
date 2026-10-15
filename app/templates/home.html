@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>Copa Escolar de Fulbito</h1>
+  <p class="lead">Resultados, tabla de posiciones, goleadores y fair play de los campeonatos escolares.</p>
+</section>
+
+<h2>Torneos activos</h2>
+{% if tournaments %}
+  <div class="card-grid">
+    {% for t in tournaments %}
+    <a class="card tournament-card" href="/torneo/{{ t.id }}">
+      <h3>{{ t.name }}</h3>
+      <p class="meta">
+        <span class="badge">{{ t.category }}</span>
+        <span class="badge">{{ t.gender }}</span>
+        <span class="badge">Temporada {{ t.season }}</span>
+      </p>
+      <span class="link-more">Ver torneo →</span>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="empty">No hay torneos activos por el momento.</p>
+{% endif %}
+{% endblock %}

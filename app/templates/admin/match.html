@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Gestionar partido · Administración{% endblock %}
+{% set csrf = request.cookies.get('fulbito_csrf', '') %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/admin">Panel</a> / <a href="/admin/torneo/{{ m.tournament_id }}">Torneo</a> / <span>Partido</span></nav>
+<h1>{{ m.home_name or '—' }} vs {{ m.away_name or '—' }}</h1>
+
+<section class="admin-section">
+  <h2>Programación</h2>
+  <form method="post" action="/admin/partido/{{ m.id }}/programar" class="form grid2">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>Fecha y hora<input name="kickoff" type="datetime-local" value="{{ m.kickoff }}"></label>
+    <label>Cancha<input name="cancha" value="{{ m.cancha or '' }}"></label>
+    <button type="submit" class="btn">Guardar programación</button>
+  </form>
+</section>
+
+<section class="admin-section">
+  <h2>Resultado</h2>
+  <form method="post" action="/admin/partido/{{ m.id }}/resultado" class="form score-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>{{ m.home_name }}<input name="home_goals" type="number" min="0" value="{{ m.home_goals if m.home_goals is not none else 0 }}" required></label>
+    <span class="dash">-</span>
+    <label>{{ m.away_name }}<input name="away_goals" type="number" min="0" value="{{ m.away_goals if m.away_goals is not none else 0 }}" required></label>
+    <button type="submit" class="btn">Registrar resultado</button>
+  </form>
+</section>
+
+<section class="admin-section">
+  <h2>Eventos (goles / tarjetas)</h2>
+  <ul class="plain-list">
+    {% for e in events %}
+    <li>
+      <span class="badge sm">{{ e.kind }}</span> {{ e.player_name or 'N/D' }}
+      {% if e.minute is not none %}<span class="muted">({{ e.minute }}')</span>{% endif %}
+    </li>
+    {% else %}<li class="empty">Sin eventos.</li>{% endfor %}
+  </ul>
+  <form method="post" action="/admin/partido/{{ m.id }}/evento" class="form grid2">
+    <input type="hidden" name="csrf_token" value="{{ csrf }}">
+    <label>Jugador
+      <select name="player_id" required>
+        {% if home_players %}<optgroup label="{{ m.home_name }}">{% for p in home_players %}<option value="{{ p.id }}">{{ p.name }}{% if p.dorsal %} #{{ p.dorsal }}{% endif %}</option>{% endfor %}</optgroup>{% endif %}
+        {% if away_players %}<optgroup label="{{ m.away_name }}">{% for p in away_players %}<option value="{{ p.id }}">{{ p.name }}{% if p.dorsal %} #{{ p.dorsal }}{% endif %}</option>{% endfor %}</optgroup>{% endif %}
+      </select>
+    </label>
+    <label>Tipo
+      <select name="kind"><option value="gol">Gol</option><option value="amarilla">Amarilla</option><option value="roja">Roja</option></select>
+    </label>
+    <label>Minuto<input name="minute" type="number" min="0" max="60"></label>
+    <button type="submit" class="btn">Agregar evento</button>
+  </form>
+</section>
+{% endblock %}

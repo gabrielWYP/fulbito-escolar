@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Colegios · Copa Escolar de Fulbito{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/">Inicio</a> / <span>Colegios</span></nav>
+<h1>Colegios participantes</h1>
+{% if schools %}
+<div class="card-grid">
+  {% for s in schools %}
+  <a class="card" href="/colegio/{{ s.id }}">
+    <h3>{{ s.name }}</h3>
+    {% if s.district %}<p class="meta">{{ s.district }}</p>{% endif %}
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<p class="empty">No hay colegios registrados.</p>
+{% endif %}
+{% endblock %}

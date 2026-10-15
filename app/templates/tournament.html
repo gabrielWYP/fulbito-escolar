@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ t.name }} · Copa Escolar de Fulbito{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/">Inicio</a> / <span>{{ t.name }}</span></nav>
+<h1>{{ t.name }}</h1>
+<p class="meta">
+  <span class="badge">{{ t.category }}</span>
+  <span class="badge">{{ t.gender }}</span>
+  <span class="badge">Temporada {{ t.season }}</span>
+</p>
+
+<div class="tabs" role="tablist">
+  <button class="tab active" data-tab="posiciones" role="tab" aria-selected="true">Posiciones</button>
+  <button class="tab" data-tab="fixture" role="tab" aria-selected="false">Fixture</button>
+  <button class="tab" data-tab="goleadores" role="tab" aria-selected="false">Goleadores</button>
+  <button class="tab" data-tab="fairplay" role="tab" aria-selected="false">Fair Play</button>
+</div>
+
+<section class="tab-panel active" data-panel="posiciones">
+  {% for g in groups %}
+  <h2>{{ g.name }}</h2>
+  <div class="table-wrap">
+    <table class="data-table standings">
+      <caption class="sr-only">Tabla de posiciones {{ g.name }}</caption>
+      <thead>
+        <tr>
+          <th scope="col">#</th><th scope="col" class="ta-left">Equipo</th>
+          <th scope="col">PJ</th><th scope="col">PG</th><th scope="col">PE</th>
+          <th scope="col">PP</th><th scope="col">GF</th><th scope="col">GC</th>
+          <th scope="col">DG</th><th scope="col">Pts</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in standings[g.id] %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="ta-left"><a href="/equipo/{{ s.team_id }}">{{ s.name }}</a></td>
+          <td>{{ s.pj }}</td><td>{{ s.pg }}</td><td>{{ s.pe }}</td><td>{{ s.pp }}</td>
+          <td>{{ s.gf }}</td><td>{{ s.gc }}</td>
+          <td>{{ "%+d"|format(s.dg) }}</td><td class="pts">{{ s.pts }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="10" class="empty">Sin equipos en este grupo.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p class="empty">Este torneo aún no tiene grupos.</p>
+  {% endfor %}
+</section>
+
+<section class="tab-panel" data-panel="fixture">
+  <h2>Calendario y resultados</h2>
+  {% set ns = namespace(j=None) %}
+  {% for m in matches %}
+    {% if m.jornada != ns.j %}
+      {% set ns.j = m.jornada %}
+      <h3 class="jornada-h">{% if m.jornada %}Fecha {{ m.jornada }}{% else %}{{ m.stage|capitalize }}{% endif %}</h3>
+    {% endif %}
+    <div class="match-row {{ 'played' if m.played else 'pending' }}">
+      <span class="team home">{{ m.home_name or '—' }}</span>
+      {% if m.played %}
+        <span class="score">{{ m.home_goals }} - {{ m.away_goals }}</span>
+      {% else %}
+        <span class="score vs">vs</span>
+      {% endif %}
+      <span class="team away">{{ m.away_name or '—' }}</span>
+      <span class="match-meta">
+        {% if m.group_name %}<span class="badge sm">{{ m.group_name }}</span>{% endif %}
+        {% if m.kickoff %}<time>{{ m.kickoff.replace('T', ' ') }}</time>{% endif %}
+        {% if m.cancha %}· {{ m.cancha }}{% endif %}
+      </span>
+    </div>
+  {% else %}
+    <p class="empty">Aún no hay partidos programados.</p>
+  {% endfor %}
+</section>
+
+<section class="tab-panel" data-panel="goleadores">
+  <h2>Goleadores</h2>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>#</th><th class="ta-left">Jugador</th><th class="ta-left">Equipo</th><th>Goles</th></tr></thead>
+      <tbody>
+        {% for s in scorers %}
+        <tr><td>{{ loop.index }}</td><td class="ta-left">{{ s.player_name }}</td>
+            <td class="ta-left"><a href="/equipo/{{ s.team_id }}">{{ s.team_name }}</a></td>
+            <td class="pts">{{ s.goles }}</td></tr>
+        {% else %}
+        <tr><td colspan="4" class="empty">Sin goles registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="tab-panel" data-panel="fairplay">
+  <h2>Fair Play (tarjetas)</h2>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th class="ta-left">Equipo</th><th>🟨 Amarillas</th><th>🟥 Rojas</th></tr></thead>
+      <tbody>
+        {% for f in fairplay %}
+        <tr><td class="ta-left"><a href="/equipo/{{ f.team_id }}">{{ f.team_name }}</a></td>
+            <td>{{ f.amarillas or 0 }}</td><td>{{ f.rojas or 0 }}</td></tr>
+        {% else %}
+        <tr><td colspan="3" class="empty">Sin tarjetas registradas.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

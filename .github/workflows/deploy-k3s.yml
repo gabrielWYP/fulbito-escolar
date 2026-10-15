@@ -1,0 +1,96 @@
+name: Deploy to K3S
+
+on:
+  workflow_run:
+    workflows:
+      - CI
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-k3s-production
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Select immutable release
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    outputs:
+      image-tag: ${{ steps.release.outputs.image-tag }}
+      source-sha: ${{ steps.release.outputs.source-sha }}
+    steps:
+      - name: Resolve source commit
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if [ "${EVENT_NAME}" = "workflow_run" ]; then
+            source_sha="${RUN_SHA}"
+          else
+            source_sha="${DISPATCH_SHA}"
+          fi
+          source_sha="${source_sha,,}"
+          [[ "${source_sha}" =~ ^[0-9a-f]{40}$ ]] || {
+            echo "::error::Invalid source commit SHA"
+            exit 1
+          }
+          echo "source-sha=${source_sha}" >> "${GITHUB_OUTPUT}"
+          echo "image-tag=main-${source_sha:0:12}" >> "${GITHUB_OUTPUT}"
+
+  build:
+    name: Build arm64 image
+    needs: release
+    # The K3S node is ARM64: build natively instead of under QEMU.
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Checkout source commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.release.outputs.source-sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish immutable image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/arm64
+          push: true
+          tags: ghcr.io/gabrielwyp/fulbito-escolar:${{ needs.release.outputs.image-tag }}
+          labels: org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          cache-from: type=gha,scope=fulbito-escolar
+          cache-to: type=gha,mode=max,scope=fulbito-escolar
+          provenance: mode=max
+          sbom: true
+
+  deploy:
+    name: Deploy immutable release
+    needs:
+      - release
+      - build
+    uses: gabrielwyp/K3S_Infra/.github/workflows/deploy-fulbito.yml@main
+    with:
+      image-tag: ${{ needs.release.outputs.image-tag }}

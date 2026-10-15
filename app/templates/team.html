@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} · Copa Escolar de Fulbito{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Ruta"><a href="/">Inicio</a> / <span>{{ team.name }}</span></nav>
+<h1>{{ team.name }}</h1>
+<p class="meta">Colegio: <a href="/colegio/{{ team.school_id }}">{{ team.school_name }}</a></p>
+
+<h2>Plantel</h2>
+<div class="table-wrap">
+  <table class="data-table">
+    <thead><tr><th>Dorsal</th><th class="ta-left">Jugador</th></tr></thead>
+    <tbody>
+      {% for p in players %}
+      <tr><td>{{ p.dorsal if p.dorsal is not none else '—' }}</td>
+          <td class="ta-left">{{ p.name }}</td></tr>
+      {% else %}
+      <tr><td colspan="2" class="empty">Sin jugadores registrados.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
